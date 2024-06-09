@@ -33,7 +33,7 @@ class TestTokenizer(unittest.TestCase):
         vocab = build_vocab()
         expected_vocab = sorted(
             set("0123456789()+-*/").union(
-                {"sin", "cos", "tan", "exp", "log", "x", "**"}
+                {"sin", "cos", "tan", "exp", "log", "x", "**", "<sos>", "<eos>"}
             )
         )
         self.assertEqual(vocab, expected_vocab)
