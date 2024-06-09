@@ -20,7 +20,7 @@ def detokenize_expression(tokens):
 
 def build_vocab():
     vocab = set("0123456789()+-*/")
-    vocab.update(["sin", "cos", "tan", "exp", "log", "x", "**"])
+    vocab.update(["sin", "cos", "tan", "exp", "log", "x", "**", "<sos>", "<eos>"])
     return sorted(vocab)
 
 
