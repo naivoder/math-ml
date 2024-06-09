@@ -3,35 +3,29 @@ import subprocess
 import torch
 import torch.optim as optim
 import torch.nn as nn
-from torch.utils.data import Dataset, DataLoader, random_split
+from torch.utils.data import Dataset, DataLoader
 from model import TransformerModel
 from tokenizer import tokenize_expression
 from dataset import generate_function_derivative_pairs
 
 
 class ExpressionDataset(Dataset):
-    def __init__(self, vocab):
-        self.generator = generate_function_derivative_pairs()
+    def __init__(self, vocab, n_pairs):
         self.vocab = {word: i for i, word in enumerate(vocab)}
+        self.data = generate_function_derivative_pairs(n_pairs)
 
     def __len__(self):
-        return 10000  # Arbitrary large number to simulate infinite dataset
+        return len(self.data)
 
     def __getitem__(self, idx):
-        while True:
-            func, deriv = next(self.generator)
-            func_tokens = tokenize_expression(func)
-            deriv_tokens = tokenize_expression(deriv)
+        func, deriv = self.data[idx]
+        func_tokens = tokenize_expression(func)
+        deriv_tokens = tokenize_expression(deriv)
 
-            try:
-                func_indices = [self.vocab[token] for token in func_tokens]
-                deriv_indices = [self.vocab[token] for token in deriv_tokens]
-            except KeyError as e:
-                print(f"Skipping invalid token: {e}")
-                continue
+        func_indices = [self.vocab[token] for token in func_tokens]
+        deriv_indices = [self.vocab[token] for token in deriv_tokens]
 
-            if len(func_indices) <= 512 and len(deriv_indices) <= 512:
-                return torch.tensor(func_indices), torch.tensor(deriv_indices)
+        return torch.tensor(func_indices), torch.tensor(deriv_indices)
 
 
 def collate_fn(batch):
@@ -118,11 +112,11 @@ if __name__ == "__main__":
     NUM_DECODER_LAYERS = 6
     DIM_FEEDFORWARD = 2048
     DROPOUT = 0.1
-    BATCH_SIZE = 256
+    BATCH_SIZE = 50
     N_EPOCHS = 1000
     CLIP = 1
     LEARNING_RATE = 1e-4
-    PATIENCE = 20  # Early stopping
+    PATIENCE = 20  # Early stopping patience
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -143,22 +137,21 @@ if __name__ == "__main__":
     )
     criterion = nn.CrossEntropyLoss(ignore_index=0)
 
-    dataset = ExpressionDataset(vocab)
-    train_size = int(0.8 * len(dataset))
-    val_size = len(dataset) - train_size
-    train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
-
-    train_dataloader = DataLoader(
-        train_dataset, batch_size=BATCH_SIZE, collate_fn=collate_fn
-    )
-    val_dataloader = DataLoader(
-        val_dataset, batch_size=BATCH_SIZE, collate_fn=collate_fn
-    )
-
     best_valid_loss = float("inf")
     epochs_no_improve = 0
 
     for epoch in range(N_EPOCHS):
+        # Generate new dataset for each epoch
+        train_dataset = ExpressionDataset(vocab, 100 * BATCH_SIZE)
+        val_dataset = ExpressionDataset(vocab, 20 * BATCH_SIZE)
+
+        train_dataloader = DataLoader(
+            train_dataset, batch_size=BATCH_SIZE, collate_fn=collate_fn
+        )
+        val_dataloader = DataLoader(
+            val_dataset, batch_size=BATCH_SIZE, collate_fn=collate_fn
+        )
+
         train_loss = train_model(model, train_dataloader, optimizer, criterion, CLIP)
         val_loss, val_accuracy = evaluate_model(model, val_dataloader, criterion)
         scheduler.step(val_loss)
@@ -166,7 +159,7 @@ if __name__ == "__main__":
         if val_loss < best_valid_loss:
             best_valid_loss = val_loss
             epochs_no_improve = 0
-            torch.save(model.state_dict(), "weights/model.pt")
+            torch.save(model.state_dict(), "best_model.pt")
         else:
             epochs_no_improve += 1
 
