@@ -69,15 +69,15 @@ def train_model(model, iterator, optimizer, criterion, clip):
 def evaluate_model(model, iterator, criterion):
     model.eval()
     epoch_loss = 0
-    num_correct = 0
-    num_total = 0
+    # num_correct = 0
+    # num_total = 0
 
     with torch.no_grad():
-        for i, (src, trg, src_lens, trg_lens) in enumerate(iterator):
+        for _, (src, trg, _, _) in enumerate(iterator):
             src = src.to(device)
             trg = trg.to(device)
 
-            output = model(src, trg, 0)  # Turn off teacher forcing
+            output = model(src, trg)
 
             output_dim = output.shape[-1]
             output = output.view(-1, output_dim)
@@ -86,12 +86,12 @@ def evaluate_model(model, iterator, criterion):
             loss = criterion(output, trg)
             epoch_loss += loss.item()
 
-            _, predicted = torch.max(output, 1)
-            num_correct += (predicted == trg).sum().item()
-            num_total += trg.size(0)
+            # _, predicted = torch.max(output, 1)
+            # num_correct += (predicted == trg).sum().item()
+            # num_total += trg.size(0)
 
-    accuracy = num_correct / num_total
-    return epoch_loss / len(iterator), accuracy
+    # return epoch_loss / len(iterator), num_correct/num_total
+    return epoch_loss / len(iterator), _
 
 
 if __name__ == "__main__":
@@ -116,7 +116,7 @@ if __name__ == "__main__":
     N_EPOCHS = 1000
     CLIP = 1
     LEARNING_RATE = 1e-4
-    PATIENCE = 20  # Early stopping patience
+    PATIENCE = 10  # Early stopping patience
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -133,7 +133,7 @@ if __name__ == "__main__":
 
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode="min", factor=0.5, patience=5
+        optimizer, mode="min", factor=0.5, patience=3
     )
     criterion = nn.CrossEntropyLoss(ignore_index=0)
 
@@ -142,8 +142,8 @@ if __name__ == "__main__":
 
     for epoch in range(N_EPOCHS):
         # Generate new dataset for each epoch
-        train_dataset = ExpressionDataset(vocab, 100 * BATCH_SIZE)
-        val_dataset = ExpressionDataset(vocab, 20 * BATCH_SIZE)
+        train_dataset = ExpressionDataset(vocab, 10 * BATCH_SIZE)
+        val_dataset = ExpressionDataset(vocab, 2 * BATCH_SIZE)
 
         train_dataloader = DataLoader(
             train_dataset, batch_size=BATCH_SIZE, collate_fn=collate_fn
@@ -159,7 +159,7 @@ if __name__ == "__main__":
         if val_loss < best_valid_loss:
             best_valid_loss = val_loss
             epochs_no_improve = 0
-            torch.save(model.state_dict(), "best_model.pt")
+            torch.save(model.state_dict(), "weights/model.pt")
         else:
             epochs_no_improve += 1
 
@@ -168,5 +168,5 @@ if __name__ == "__main__":
             break
 
         print(
-            f"[Epoch {epoch+1}/{N_EPOCHS}] Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | Val Accuracy: {val_accuracy:.4f}"
+            f"[Epoch {epoch+1:.d4}/{N_EPOCHS}] Train Loss: {train_loss:.8f} | Val Loss: {val_loss:.8f}"
         )
