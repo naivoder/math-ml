@@ -7,7 +7,7 @@ from tokenizer import tokenize_expression
 
 x = sp.symbols("x")
 operators = ["+", "-", "*", "/", "^"]
-unary_operators = ["sin", "cos", "tan", "exp", "log"]
+unary_operators = ["sin", "cos", "tan", "log"]
 constants = [
     sp.Rational(random.randint(1, 10), random.randint(1, 10)) for _ in range(10)
 ]
@@ -77,8 +77,8 @@ def infix_to_prefix(expr):
             return f"cos {helper(node.args[0])}"
         if isinstance(node, sp.tan):
             return f"tan {helper(node.args[0])}"
-        if isinstance(node, sp.exp):
-            return f"exp {helper(node.args[0])}"
+        # if isinstance(node, sp.exp):
+        #     return f"exp {helper(node.args[0])}"
         if isinstance(node, sp.log):
             return f"log {helper(node.args[0])}"
         raise ValueError(f"Unsupported node type: {type(node)}")

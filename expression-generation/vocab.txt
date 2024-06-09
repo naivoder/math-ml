@@ -16,7 +16,6 @@
 <eos>
 <sos>
 cos
-exp
 log
 sin
 tan
