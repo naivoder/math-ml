@@ -3,38 +3,9 @@ import subprocess
 import torch
 import torch.optim as optim
 import torch.nn as nn
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 from model import TransformerModel
-from tokenizer import tokenize_expression
-from dataset import generate_function_derivative_pairs
-
-
-class ExpressionDataset(Dataset):
-    def __init__(self, vocab, n_pairs):
-        self.vocab = {word: i for i, word in enumerate(vocab)}
-        self.data = generate_function_derivative_pairs(n_pairs)
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, idx):
-        func, deriv = self.data[idx]
-        func_tokens = tokenize_expression(func)
-        deriv_tokens = tokenize_expression(deriv)
-
-        func_indices = [self.vocab[token] for token in func_tokens]
-        deriv_indices = [self.vocab[token] for token in deriv_tokens]
-
-        return torch.tensor(func_indices), torch.tensor(deriv_indices)
-
-
-def collate_fn(batch):
-    src, trg = zip(*batch)
-    src_lens = [len(s) for s in src]
-    trg_lens = [len(t) for t in trg]
-    src_padded = nn.utils.rnn.pad_sequence(src, padding_value=0)
-    trg_padded = nn.utils.rnn.pad_sequence(trg, padding_value=0)
-    return src_padded, trg_padded, src_lens, trg_lens
+from dataset import ExpressionDataset, collate_fn
 
 
 def train_model(model, iterator, optimizer, criterion, clip):
@@ -42,7 +13,7 @@ def train_model(model, iterator, optimizer, criterion, clip):
     epoch_loss = 0
 
     for i, (src, trg, _, _) in enumerate(iterator):
-        print(f"🏋️ Training on Batch {i+1}/{len(iterator)}...", end="\r")
+        print(f" 🏋️ Training on Batch {i+1}/{len(iterator)}...", end="\r")
         src = src.to(device)
         trg = trg.to(device)
 
