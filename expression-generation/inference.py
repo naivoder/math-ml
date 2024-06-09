@@ -7,16 +7,19 @@ import os
 import subprocess
 from tabulate import tabulate
 import random
+from decoding import are_expressions_equivalent
+from tqdm import tqdm
 
 
 def evaluate_model(model, iterator, vocab):
     model.eval()
     num_correct = 0
     num_total = 0
+    alt_correct = 0
     results = []
 
     with torch.no_grad():
-        for _, (src, trg, _, _) in enumerate(iterator):
+        for _, (src, trg, _, _) in enumerate(tqdm(iterator)):
             src = src.to(device)
             trg = trg.to(device)
 
@@ -44,15 +47,17 @@ def evaluate_model(model, iterator, vocab):
                     ]
                 )
 
+                if are_expressions_equivalent(trg_expr, pred_expr):
+                    alt_correct += 1
+
                 results.append((src_expr, pred_expr, trg_expr))
 
-    # Select a random subset of 10 samples
+    # Display 10 random samples in a table
     random_results = random.sample(results, 10)
-
-    # Display the results in a table
     headers = ["Input", "Predicted Output", "Correct Output"]
     table = tabulate(random_results, headers, tablefmt="grid")
     print(table)
+    print(f"Detokenized Accuracy: {alt_correct}/{num_total}")
 
     return num_correct / num_total
 

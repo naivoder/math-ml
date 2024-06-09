@@ -2,7 +2,7 @@
 
 ## Results
 
-Lookin' pretty good...
+Lookin' pretty good... obviously hurt by use of parenthesis (which definitely justifies the authors' use of postfix notation...) You can easily have 9/10 characters correct but the resulting expression is very wrong.
 
 | Input                             | Predicted Output                                   | Correct Output                                     |
 |-----------------------------------|----------------------------------------------------|----------------------------------------------------|
