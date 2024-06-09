@@ -41,8 +41,8 @@ def train_model(model, iterator, optimizer, criterion, clip):
     model.train()
     epoch_loss = 0
 
-    for i, (src, trg, src_lens, trg_lens) in enumerate(iterator):
-        print(f"Batch {i+1}/{len(iterator)}...", end="\r")
+    for i, (src, trg, _, _) in enumerate(iterator):
+        print(f"🏋️ Training on Batch {i+1}/{len(iterator)}...", end="\r")
         src = src.to(device)
         trg = trg.to(device)
 
