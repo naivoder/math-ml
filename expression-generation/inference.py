@@ -1,17 +1,15 @@
 import torch
-import torch.nn as nn
 from torch.utils.data import DataLoader
 from model import TransformerModel
 from tokenizer import detokenize_expression
 from dataset import ExpressionDataset, collate_fn
-import sympy as sp
 import os
 import subprocess
 from tabulate import tabulate
 import random
 
 
-def evaluate_model(model, iterator, vocab, vocab_rev):
+def evaluate_model(model, iterator, vocab):
     model.eval()
     num_correct = 0
     num_total = 0
@@ -99,5 +97,5 @@ if __name__ == "__main__":
     dataset = ExpressionDataset(vocab, 1000)
     dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, collate_fn=collate_fn)
 
-    accuracy = evaluate_model(model, dataloader, vocab_dict, vocab_rev)
+    accuracy = evaluate_model(model, dataloader, vocab_dict)
     print(f"Test Accuracy: {accuracy:.4f}")

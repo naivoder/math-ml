@@ -40,8 +40,6 @@ def train_model(model, iterator, optimizer, criterion, clip):
 def evaluate_model(model, iterator, criterion):
     model.eval()
     epoch_loss = 0
-    # num_correct = 0
-    # num_total = 0
 
     with torch.no_grad():
         for _, (src, trg, _, _) in enumerate(iterator):
@@ -57,12 +55,7 @@ def evaluate_model(model, iterator, criterion):
             loss = criterion(output, trg)
             epoch_loss += loss.item()
 
-            # _, predicted = torch.max(output, 1)
-            # num_correct += (predicted == trg).sum().item()
-            # num_total += trg.size(0)
-
-    # return epoch_loss / len(iterator), num_correct/num_total
-    return epoch_loss / len(iterator), _
+    return epoch_loss / len(iterator)
 
 
 if __name__ == "__main__":
@@ -124,7 +117,7 @@ if __name__ == "__main__":
         )
 
         train_loss = train_model(model, train_dataloader, optimizer, criterion, CLIP)
-        val_loss, val_accuracy = evaluate_model(model, val_dataloader, criterion)
+        val_loss = evaluate_model(model, val_dataloader, criterion)
         scheduler.step(val_loss)
 
         if val_loss < best_valid_loss:
