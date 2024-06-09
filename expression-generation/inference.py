@@ -32,7 +32,6 @@ def evaluate_model(model, iterator, vocab, vocab_rev):
             num_correct += (predicted == trg).sum().item()
             num_total += trg.size(0)
 
-            # Collect results for a random selection of 10 samples
             for i in range(src.shape[1]):
                 src_expr = detokenize_expression(
                     [vocab[idx.item()] for idx in src[:, i]]
@@ -81,7 +80,7 @@ if __name__ == "__main__":
     NUM_DECODER_LAYERS = 6
     DIM_FEEDFORWARD = 2048
     DROPOUT = 0.1
-    BATCH_SIZE = 50
+    BATCH_SIZE = 1
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     model = TransformerModel(
