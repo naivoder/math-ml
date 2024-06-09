@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 
 class TransformerModel(nn.Module):
@@ -30,12 +29,32 @@ class TransformerModel(nn.Module):
         )
         self.fc_out = nn.Linear(d_model, output_dim)
         self.dropout = nn.Dropout(dropout)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    def generate_square_subsequent_mask(self, sz):
+        mask = (torch.triu(torch.ones((sz, sz))) == 1).transpose(0, 1)
+        mask = (
+            mask.float()
+            .masked_fill(mask == 0, float("-inf"))
+            .masked_fill(mask == 1, float(0.0))
+        )
+        return mask
+
+    def encode(self, src, src_mask):
+        src_emb = self.dropout(self.positional_encoding(self.src_tok_emb(src)))
+        return self.transformer.encoder(src_emb, src_mask)
+
+    def decode(self, trg, memory, trg_mask):
+        trg_emb = self.dropout(self.positional_encoding(self.trg_tok_emb(trg)))
+        return self.transformer.decoder(trg_emb, memory, trg_mask)
 
     def forward(self, src, trg):
-        src_emb = self.dropout(self.positional_encoding(self.src_tok_emb(src)))
-        trg_emb = self.dropout(self.positional_encoding(self.trg_tok_emb(trg)))
+        src_mask = self.generate_square_subsequent_mask(src.size(0)).to(self.device)
+        trg_mask = self.generate_square_subsequent_mask(trg.size(0)).to(self.device)
 
-        output = self.transformer(src_emb, trg_emb)
+        memory = self.encode(src, src_mask)
+        output = self.decode(trg, memory, trg_mask)
+
         return self.fc_out(output)
 
 
