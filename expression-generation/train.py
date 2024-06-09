@@ -168,5 +168,5 @@ if __name__ == "__main__":
             break
 
         print(
-            f"[Epoch {epoch+1:.d4}/{N_EPOCHS}] Train Loss: {train_loss:.8f} | Val Loss: {val_loss:.8f}"
+            f"[Epoch {epoch+1:04}/{N_EPOCHS}] Train Loss: {train_loss:.8f} | Val Loss: {val_loss:.8f}"
         )
