@@ -5,9 +5,8 @@ import torch
 from torch.utils.data import Dataset
 from tokenizer import tokenize_expression
 
-
 x = sp.symbols("x")
-operators = ["+", "-", "*", "/", "**"]
+operators = ["+", "-", "*", "/", "^"]
 unary_operators = ["sin", "cos", "tan", "exp", "log"]
 constants = [
     sp.Rational(random.randint(1, 10), random.randint(1, 10)) for _ in range(10)
@@ -60,6 +59,33 @@ def generate_expression(depth, current_depth=0, include_x=True):
     return sp.sympify(f"({base_expr} {op} {exponent})")
 
 
+def infix_to_prefix(expr):
+    def helper(node):
+        if isinstance(node, sp.Symbol) or isinstance(node, sp.Number):
+            return str(node)
+        if isinstance(node, sp.Mul):
+            return f"* {helper(node.args[0])} {helper(node.args[1])}"
+        if isinstance(node, sp.Add):
+            return f"+ {helper(node.args[0])} {helper(node.args[1])}"
+        if isinstance(node, sp.Pow):
+            return f"^ {helper(node.args[0])} {helper(node.args[1])}"
+        if isinstance(node, sp.Rational):
+            return f"/ {helper(node.p)} {helper(node.q)}"
+        if isinstance(node, sp.sin):
+            return f"sin {helper(node.args[0])}"
+        if isinstance(node, sp.cos):
+            return f"cos {helper(node.args[0])}"
+        if isinstance(node, sp.tan):
+            return f"tan {helper(node.args[0])}"
+        if isinstance(node, sp.exp):
+            return f"exp {helper(node.args[0])}"
+        if isinstance(node, sp.log):
+            return f"log {helper(node.args[0])}"
+        raise ValueError(f"Unsupported node type: {type(node)}")
+
+    return helper(expr)
+
+
 def generate_pair(_):
     while True:
         depth = random.randint(1, 5)
@@ -69,7 +95,9 @@ def generate_pair(_):
         derivative = sp.diff(expr, x)
         if "zoo" in str(expr) or "zoo" in str(derivative) or derivative == 0:
             continue
-        return expr, derivative
+        expr_prefix = infix_to_prefix(expr)
+        derivative_prefix = infix_to_prefix(derivative)
+        return expr_prefix, derivative_prefix
 
 
 def generate_function_derivative_pairs(n_pairs):

@@ -76,11 +76,11 @@ if __name__ == "__main__":
     NUM_DECODER_LAYERS = 6
     DIM_FEEDFORWARD = 2048
     DROPOUT = 0.1
-    BATCH_SIZE = 50
+    BATCH_SIZE = 256
     N_EPOCHS = 1000
     CLIP = 1
     LEARNING_RATE = 1e-4
-    PATIENCE = 10  # Early stopping patience
+    PATIENCE = 20  # Early stopping patience
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -97,7 +97,7 @@ if __name__ == "__main__":
 
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode="min", factor=0.5, patience=3
+        optimizer, mode="min", factor=0.5, patience=5
     )
     criterion = nn.CrossEntropyLoss(ignore_index=0)
 

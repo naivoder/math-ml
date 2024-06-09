@@ -3,24 +3,48 @@ import sympy as sp
 from dataset import *
 
 
+def prefix_to_infix(prefix_expr):
+    tokens = prefix_expr.split()
+    stack = []
+    for token in reversed(tokens):
+        if token in operators + unary_operators:
+            if token in unary_operators:
+                operand = stack.pop()
+                stack.append(f"{token}({operand})")
+            else:
+                left = stack.pop()
+                right = stack.pop()
+                stack.append(f"({left} {token} {right})")
+        else:
+            stack.append(token)
+    return stack[0]
+
+
 class TestFunctionDerivativeGenerator(unittest.TestCase):
 
     def test_function_contains_x(self):
         generator = generate_function_derivative_pairs(10)
         for func, deriv in generator:
-            self.assertIn(x, func.free_symbols, f"Function {func} does not contain x")
+            func_expr = sp.sympify(prefix_to_infix(func))
+            self.assertIn(
+                x, func_expr.free_symbols, f"Function {func} does not contain x"
+            )
 
     def test_derivative_not_zero(self):
         generator = generate_function_derivative_pairs(10)
         for func, deriv in generator:
-            self.assertNotEqual(deriv, 0, f"Derivative of function {func} is zero")
+            deriv_expr = sp.sympify(prefix_to_infix(deriv))
+            self.assertNotEqual(deriv_expr, 0, f"Derivative of function {func} is zero")
 
     def test_correct_derivative(self):
         generator = generate_function_derivative_pairs(10)
         for func, deriv in generator:
-            expected_deriv = sp.diff(func, x)
-            self.assertEqual(
-                deriv, expected_deriv, f"Derivative of function {func} is incorrect"
+            func_expr = sp.sympify(prefix_to_infix(func))
+            deriv_expr = sp.sympify(prefix_to_infix(deriv))
+            expected_deriv = sp.diff(func_expr, x)
+            self.assertTrue(
+                sp.simplify(expected_deriv - deriv_expr) == 0,
+                f"Derivative of function {func} is incorrect\nExpected: {expected_deriv}\nGot: {deriv_expr}",
             )
 
     def test_no_zoo_in_function(self):

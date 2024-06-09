@@ -1,34 +1,66 @@
 import unittest
-from decoding import are_expressions_equivalent, clean_expression
+import sympy as sp
+from dataset import *
 
 
-class TestDecoding(unittest.TestCase):
+def prefix_to_infix(prefix_expr):
+    tokens = prefix_expr.split()
+    stack = []
+    for token in reversed(tokens):
+        if token in operators + unary_operators:
+            if token in unary_operators:
+                operand = stack.pop()
+                stack.append(f"{token}({operand})")
+            else:
+                left = stack.pop()
+                right = stack.pop()
+                stack.append(f"({left} {token} {right})")
+        else:
+            stack.append(token)
+    return stack[0]
 
-    def test_are_expressions_equivalent(self):
-        test_cases = [
-            ("2*x + 3", "3 + 2*x", True),
-            ("(x + 1)*(x - 1)", "x**2 - 1", True),
-            ("2*(x + 3)", "2*x + 6", True),
-            ("3*x + 4*y", "4*y + 3*x", True),
-            ("(x + 1)*(y - 2)", "(y - 2)*(x + 1)", True),
-            ("2*x*(3 + y)", "6*x + 2*x*y", True),
-            ("sin(x)*cos(y)", "cos(y)*sin(x)", True),
-            ("x/y", "x/y", True),
-            ("x + y", "y + x", True),
-            ("x * 1/y", "x/y", True),
-            ("x**2 + 2*x + 1", "(x + 1)**2", True),
-            ("x**2 - 4", "(x - 2)*(x + 2)", True),
-            ("sin(x)**2 + cos(x)**2", "1", True),
-            ("log(x*y)", "log(x) + log(y)", True),
-            ("exp(x + y)", "exp(x)*exp(y)", True),
-            ("2*x + 3", "2*x + 2", False),
-            ("x**2 + 2*x + 1", "x**2 + 2*x", False),
-            ("sin(x)**2 + cos(x)**2", "0", False),
-        ]
 
-        for expr1, expr2, expected in test_cases:
-            with self.subTest(expr1=clean_expression(expr1), expr2=expr2):
-                self.assertEqual(are_expressions_equivalent(expr1, expr2), expected)
+class TestFunctionDerivativeGenerator(unittest.TestCase):
+
+    def test_function_contains_x(self):
+        generator = generate_function_derivative_pairs(10)
+        for func, deriv in generator:
+            func_expr = sp.sympify(prefix_to_infix(func))
+            self.assertIn(
+                x, func_expr.free_symbols, f"Function {func} does not contain x"
+            )
+
+    def test_derivative_not_zero(self):
+        generator = generate_function_derivative_pairs(10)
+        for func, deriv in generator:
+            deriv_expr = sp.sympify(prefix_to_infix(deriv))
+            self.assertNotEqual(deriv_expr, 0, f"Derivative of function {func} is zero")
+
+    def test_correct_derivative(self):
+        generator = generate_function_derivative_pairs(10)
+        for func, deriv in generator:
+            func_expr = sp.sympify(prefix_to_infix(func))
+            deriv_expr = sp.sympify(prefix_to_infix(deriv))
+            expected_deriv = sp.diff(func_expr, x)
+            print(f"Function (prefix): {func}")
+            print(f"Function (infix): {func_expr}")
+            print(f"Derivative (prefix): {deriv}")
+            print(f"Derivative (infix): {deriv_expr}")
+            print(f"Expected Derivative: {expected_deriv}")
+            self.assertTrue(
+                sp.simplify(expected_deriv - deriv_expr) == 0,
+                f"Derivative of function {func} is incorrect",
+            )
+
+    def test_no_zoo_in_function(self):
+        generator = generate_function_derivative_pairs(10)
+        for func, deriv in generator:
+            self.assertNotIn("zoo", str(func), f"Function {func} contains 'zoo'")
+
+    def test_no_zoo_in_derivative(self):
+        generator = generate_function_derivative_pairs(10)
+        for func, deriv in generator:
+            self.assertNotIn("zoo", str(deriv), f"Derivative {deriv} contains 'zoo'")
 
 
 if __name__ == "__main__":
