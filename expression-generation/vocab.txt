@@ -14,9 +14,9 @@
 9
 <eos>
 <sos>
-^
 cos
 log
 sin
 tan
+exp
 x

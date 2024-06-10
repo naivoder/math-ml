@@ -6,13 +6,8 @@ from torch.utils.data import Dataset
 from tokenizer import tokenize_expression
 
 x = sp.symbols("x")
-operators = ["+", "-", "*", "/", "^"]
-unary_operators = [
-    "log",
-    "sin",
-    "cos",
-    "tan",
-]
+operators = ["+", "-", "*", "/"]
+unary_operators = ["log", "sin", "cos", "tan", "exp"]
 constants = [
     sp.Rational(random.randint(1, 10), random.randint(1, 10)) for _ in range(10)
 ]
@@ -84,6 +79,8 @@ def infix_to_prefix(expr):
             return f"tan {helper(node.args[0])}"
         if isinstance(node, sp.log):
             return f"log {helper(node.args[0])}"
+        if isinstance(node, sp.exp):
+            return f"exp {helper(node.args[0])}"
         raise ValueError(f"Unsupported node type: {type(node)}")
 
     return helper(expr)
